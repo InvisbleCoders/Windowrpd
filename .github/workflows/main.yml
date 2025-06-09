@@ -1,0 +1,26 @@
+name: AnyDesk Windows RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Start AnyDesk on Windows
+    runs-on: windows-latest
+    timeout-minutes: 9999
+
+    steps:
+      - name: Download and Install AnyDesk
+        run: |
+          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
+          Start-Process -FilePath ".\AnyDesk.exe" -ArgumentList "/silent" -Wait
+
+      - name: Display AnyDesk ID
+        run: |
+          Start-Sleep -Seconds 10
+          Get-Content "$env:APPDATA\AnyDesk\system.conf" | Select-String 'ad.anynet.id' || echo "Please open AnyDesk to see the ID"
+
+      - name: Keep Workflow Alive
+        run: |
+          echo "Press Ctrl+C to stop workflow"
+          for /l %%x in (1, 1, 999999) do timeout /t 60
