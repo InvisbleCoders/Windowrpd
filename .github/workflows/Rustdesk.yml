@@ -1,47 +1,37 @@
-name: Ubuntu Desktop with VNC + Ngrok
+name: RustDesk with Ngrok
 
 on:
   workflow_dispatch:
 
 jobs:
-  ubuntu-desktop:
-    runs-on: ubuntu-latest
-    timeout-minutes: 9999
+  rustdesk-ngrok:
+    runs-on: windows-latest
+    timeout-minutes: 60
 
     steps:
-      - name: Install Desktop Environment & VNC
+      - name: Download RustDesk
         run: |
-          sudo apt update
-          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget unzip
-          
-          vncserver :1
-          vncserver -kill :1
+          Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/latest/download/rustdesk-1.2.3-x64.exe" -OutFile "rustdesk.exe"
 
-          mkdir -p ~/.vnc
-          echo '#!/bin/bash
-          xrdb $HOME/.Xresources
-          startxfce4 &' > ~/.vnc/xstartup
-          chmod +x ~/.vnc/xstartup
-
-          # Set VNC password
-          mkdir -p ~/.vnc
-          echo -e "vncpass\nvncpass\nn" | vncpasswd
-
-          vncserver :1
-
-      - name: Install Ngrok
+      - name: Install RustDesk silently
         run: |
-          wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-linux-amd64.zip
-          unzip ngrok-stable-linux-amd64.zip
-          chmod +x ngrok
+          Start-Process -FilePath ".\rustdesk.exe" -ArgumentList "/silent" -Wait
 
-      - name: Start Ngrok Tunnel
+      - name: Start RustDesk
+        run: Start-Process "C:\Program Files\RustDesk\rustdesk.exe"
+
+      - name: Download Ngrok
         run: |
-          ./ngrok authtoken 2wUUz4RS3L7EKQgTtXWtjBBIgO4_4KEspphcDeHTkxmNf8fvM
-          ./ngrok tcp 5901 > ngrok.log &
-          sleep 10
-          echo "🟢 Ngrok Tunnel Started:"
-          cat ngrok.log | grep -o 'tcp://[0-9a-zA-Z\.:\-]*'
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
 
-      - name: Keep Runner Alive
-        run: tail -f /dev/null
+      - name: Configure Ngrok auth token
+        run: .\ngrok.exe authtoken 2wUUz4RS3L7EKQgTtXWtjBBIgO4_4KEspphcDeHTkxmNf8fvM
+
+      - name: Start Ngrok TCP tunnel on port 21112
+        run: Start-Process -NoNewWindow -FilePath ".\ngrok.exe" -ArgumentList "tcp 21112" -PassThru
+
+      - name: Wait and show Ngrok TCP endpoint
+        run: |
+          Start-Sleep -Seconds 10
+          Invoke-RestMethod http://127.0.0.1:4040/api/tunnels | Select-Object -ExpandProperty tunnels | Where-Object {$_.proto -eq "tcp"} | Select-Object public_url
