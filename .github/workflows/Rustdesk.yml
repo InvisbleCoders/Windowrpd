@@ -1,17 +1,17 @@
-name: RustDesk Windows RDP
+name: RustDesk RDP on Windows
 
 on:
   workflow_dispatch:
 
 jobs:
-  start-rustdesk:
+  rustdesk:
     runs-on: windows-latest
     timeout-minutes: 9999
 
     steps:
-      - name: Download RustDesk
+      - name: Download RustDesk (from direct link)
         run: |
-          Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-x64.exe" -OutFile "rustdesk.exe"
+          Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/gh/rustdesk/rustdesk@1.2.3/windows/x64/rustdesk.exe" -OutFile "rustdesk.exe"
           echo "✅ RustDesk downloaded"
 
       - name: Start RustDesk
