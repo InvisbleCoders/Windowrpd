@@ -9,17 +9,17 @@ jobs:
     timeout-minutes: 9999
 
     steps:
-      - name: Download RustDesk (from direct link)
+      - name: Download RustDesk from CDN
         run: |
-          Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/gh/rustdesk/rustdesk@1.2.3/windows/x64/rustdesk.exe" -OutFile "rustdesk.exe"
-          echo "✅ RustDesk downloaded"
+          Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/gh/rustdesk/rustdesk-bin@main/windows/x64/rustdesk.exe" -OutFile "rustdesk.exe"
+          echo "✅ RustDesk downloaded successfully from CDN."
 
       - name: Start RustDesk
         run: |
           Start-Process -FilePath "rustdesk.exe"
-          echo "🚀 RustDesk started. Please wait ~30 seconds."
+          echo "🚀 RustDesk started. Please wait ~30 seconds for it to generate an ID."
 
-      - name: Keep session alive
+      - name: Keep runner alive
         run: |
-          echo "🟢 Keeping session alive. Use RustDesk mobile app to connect."
+          echo "🟢 RustDesk is running. Use your mobile app to connect."
           for /l %%x in (1,1,999999) do timeout /t 60
