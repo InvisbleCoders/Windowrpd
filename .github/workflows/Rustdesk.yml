@@ -1,25 +1,47 @@
-name: RustDesk RDP on Windows
+name: Ubuntu Desktop with VNC + Ngrok
 
 on:
   workflow_dispatch:
 
 jobs:
-  rustdesk:
-    runs-on: windows-latest
+  ubuntu-desktop:
+    runs-on: ubuntu-latest
     timeout-minutes: 9999
 
     steps:
-      - name: Download RustDesk from CDN
+      - name: Install Desktop Environment & VNC
         run: |
-          Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/gh/rustdesk/rustdesk-bin@main/windows/x64/rustdesk.exe" -OutFile "rustdesk.exe"
-          echo "✅ RustDesk downloaded successfully from CDN."
+          sudo apt update
+          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget unzip
+          
+          vncserver :1
+          vncserver -kill :1
 
-      - name: Start RustDesk
-        run: |
-          Start-Process -FilePath "rustdesk.exe"
-          echo "🚀 RustDesk started. Please wait ~30 seconds for it to generate an ID."
+          mkdir -p ~/.vnc
+          echo '#!/bin/bash
+          xrdb $HOME/.Xresources
+          startxfce4 &' > ~/.vnc/xstartup
+          chmod +x ~/.vnc/xstartup
 
-      - name: Keep runner alive
+          # Set VNC password
+          mkdir -p ~/.vnc
+          echo -e "vncpass\nvncpass\nn" | vncpasswd
+
+          vncserver :1
+
+      - name: Install Ngrok
         run: |
-          echo "🟢 RustDesk is running. Use your mobile app to connect."
-          for /l %%x in (1,1,999999) do timeout /t 60
+          wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-linux-amd64.zip
+          unzip ngrok-stable-linux-amd64.zip
+          chmod +x ngrok
+
+      - name: Start Ngrok Tunnel
+        run: |
+          ./ngrok authtoken 2wUUz4RS3L7EKQgTtXWtjBBIgO4_4KEspphcDeHTkxmNf8fvM
+          ./ngrok tcp 5901 > ngrok.log &
+          sleep 10
+          echo "🟢 Ngrok Tunnel Started:"
+          cat ngrok.log | grep -o 'tcp://[0-9a-zA-Z\.:\-]*'
+
+      - name: Keep Runner Alive
+        run: tail -f /dev/null
