@@ -1,0 +1,25 @@
+name: RustDesk Windows RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start-rustdesk:
+    runs-on: windows-latest
+    timeout-minutes: 9999
+
+    steps:
+      - name: Download RustDesk
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-x64.exe" -OutFile "rustdesk.exe"
+          echo "✅ RustDesk downloaded"
+
+      - name: Start RustDesk
+        run: |
+          Start-Process -FilePath "rustdesk.exe"
+          echo "🚀 RustDesk started. Please wait ~30 seconds."
+
+      - name: Keep session alive
+        run: |
+          echo "🟢 Keeping session alive. Use RustDesk mobile app to connect."
+          for /l %%x in (1,1,999999) do timeout /t 60
